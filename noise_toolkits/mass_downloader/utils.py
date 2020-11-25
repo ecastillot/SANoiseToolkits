@@ -229,19 +229,6 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
     except:
         print(f"{now}[save_ppsd][failed]:  {filename}")
 
-# def get_ppsd(st,inv,ppsd_restrictions):
-#     tr=st[0]
-#     ppsd = PPSD(tr.stats, metadata=inv, **ppsd_restrictions)
-#     ppsd.add(st)
-#     print(ppsd.times_processed)
-#     # ppsd.save_npz(ppsd_dir)
-    # ppsd_bolean=True
-    # print(f"#### {ppsd_dir}:{ppsd_bolean}")
-
-# def get_ppsd(single):
-
-# def write_ppsd(st,inv):
-
 
 if __name__ == "__main__":
     path = "downloadprove/{year}/{network}/{station}/{location}/{channel}/{network}.{station}.{location}.{channel}.{year}.{jul_day}"

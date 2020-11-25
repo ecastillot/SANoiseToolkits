@@ -8,14 +8,14 @@ last update: 24-11-2020
 
 if __name__ == "__main__":
     import sys
-    module_path = "/home/ecastillo/repositories/SANoiseLevels"
+    module_path = "/home/ecastillo/repositories/SANoiseToolkits"
     sys.path.insert(0,module_path)
 
     from obspy.clients.fdsn import Client as FDSN_Client
     from obspy.core.utcdatetime import UTCDateTime
-    from analyses.mass_ppsd.restrictions import (DownloadRestrictions,
-                                                PPSDrestrictions)
-    from analyses.mass_ppsd.downloader import MassPPSDHelper
+    from noise_toolkits.mass_downloader.restrictions import (DownloadRestrictions,
+                                                             PPSDrestrictions)
+    from noise_toolkits.mass_downloader.downloader import MassPPSD
 
     client_tuple = ('fdsn',FDSN_Client('http://10.100.100.232:8091'))
     dldR = DownloadRestrictions(network="CM", 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
                             period_limits=None)
     my_storage = "/home/ecastillo/SANL_results"
 
-    massppsd = MassPPSDHelper(client_tuple=client_tuple,
+    massppsd = MassPPSD(client_tuple=client_tuple,
                         dld_restrictions = dldR,
                         my_storage=my_storage)
     
