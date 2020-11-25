@@ -174,40 +174,60 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
                                     endtime=endtime)
 
     except:
+        strftime = "%Y%m%dT%H%M%SZ"
         st_warn = (f"{network}."
                     f"{station}."
                     f"{location}."
                     f"{channel}"
-                    f"__{starttime}."
-                    f"__{endtime}")
+                    f"__{starttime.strftime(strftime)}"
+                    f"__{endtime.strftime(strftime)}")
         st = None
 
 
     now = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     if st == None:
-        print(f"{now}[Failed]:  {st_warn } ")
+        print(f"{now}[load_trace][failed]:  {st_warn } ")
         return None
 
     if plot_trace == True:
-        plotst_path = get_path(my_storage,'plot_trace',
+        plotst_path = get_path(my_storage,'save_trace',
                             single_cha_contents,starttime,
                             endtime,extension_file='jpg')
-        plotst_dir = os.path.dirname(plotst_path)
-        if os.path.isdir(plotst_dir) == False:
-            os.makedirs(plotst_dir)
 
-        st.plot(outfile=plotst_path)
-        print(f"{now}[plot_trace]:  {plotst_path}")
+        filename = os.path.basename(plotst_path)
+        if os.path.isfile(plotst_path) == True:
+            print(f"{now}[save_trace][exist]:  {filename}")
+
+        else:
+            plotst_dir = os.path.dirname(plotst_path)
+            if os.path.isdir(plotst_dir) == False:
+                os.makedirs(plotst_dir)
+
+            st.plot(outfile=plotst_path)
+            
+            print(f"{now}[save_trace][ok]:  {filename}")
 
     now = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
     try:
-        tr=st[0]
-        ppsd = PPSD(tr.stats, metadata=inv, **ppsd_restrictions.__dict__)
-        ppsd.add(st)
-        print(f"{now}[ppsd]:  ok")
+        ppsd_path = get_path(my_storage,'save_ppsd',
+                            single_cha_contents,starttime,
+                            endtime,extension_file='npz')
+
+        filename = os.path.basename(ppsd_path)
+        if os.path.isfile(ppsd_path ) == True:
+            print(f"{now}[save_ppsd][exist]:  {filename}")
+        else:
+            ppsd_dir = os.path.dirname(ppsd_path)
+            if os.path.isdir(ppsd_dir) == False:
+                os.makedirs(ppsd_dir)
+            tr=st[0]
+            ppsd = PPSD(tr.stats, metadata=inv, **ppsd_restrictions.__dict__)
+            ppsd.add(st)
+            ppsd.save_npz(ppsd_path)
+            print(f"{now}[save_ppsd][ok]:  {filename} ")
     except:
-        print(f"{now}[ppsd]:  Failed")
+        print(f"{now}[save_ppsd][failed]:  {filename}")
 
 # def get_ppsd(st,inv,ppsd_restrictions):
 #     tr=st[0]

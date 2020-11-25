@@ -42,5 +42,6 @@ if __name__ == "__main__":
                         dld_restrictions = dldR,
                         my_storage=my_storage)
     
-    # massppsd.create_inventory()
-    massppsd.download(inv_path="/home/ecastillo/SANL_results/inv.xml",ppsd_restrictions = ppsdR)
+    massppsd.create_inventory()
+    massppsd.download(inv_path="/home/ecastillo/SANL_results/inv.xml",ppsd_restrictions = ppsdR,
+                    n_processor=8,concurrent_feature='thread')

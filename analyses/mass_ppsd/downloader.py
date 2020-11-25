@@ -60,7 +60,7 @@ class MassPPSDHelper(object):
 
         for starttime, endtime in times:
             def run_ppsd(single_cha_contents):
-                get_ppsd(self.my_storage,self.client,inv,
+                utils.get_ppsd(self.my_storage,self.client,inv,
                         ppsd_restrictions,
                         single_cha_contents,starttime,endtime,
                         self.dld_restrictions.plot_trace)
@@ -71,6 +71,9 @@ class MassPPSDHelper(object):
                                 ppsd_restrictions,
                                 single_cha_contents,starttime,endtime,
                                 self.dld_restrictions.plot_trace)
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=n_processor) as executor:
+                    executor.map(run_ppsd,channels_contents)
         #         try:
         #             st = self.client.get_waveforms(network=self.dld_restrictions.network,
         #                                         station=self.dld_restrictions.station, 
