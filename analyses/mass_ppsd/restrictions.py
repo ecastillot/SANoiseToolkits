@@ -17,7 +17,7 @@ from obspy.signal.spectral_estimation import PPSD
 
 class DownloadRestrictions(object):
     """
-    Class storing non-domain and non-PPSD restrictions for a query
+    Class storing non-PPSD restrictions for a downloading ppsd calculations
     Parameters information taken from MassDownloader and PPSD class from obspy.
 
     :param starttime: The start time of the data to be downloaded.
@@ -32,6 +32,10 @@ class DownloadRestrictions(object):
     :type location: str
     :param channel: The channel code. Can contain wildcards.
     :type channel: str
+    :type chunklength: int
+    :param chunklength:  The length of one chunk in seconds. 
+        If set, the time between starttime and endtime will be divided 
+        into segments of chunklength_in_sec seconds.
     :type time_of_weekday: list of (int, float, float) 3-tuples
     :param time_of_weekday: If set, restricts the data that is included
         in the stack by time of day and weekday. Monday is `1`, Sunday is
@@ -63,9 +67,12 @@ class DownloadRestrictions(object):
     def __init__(self, network, station, 
                     location, channel,
                     starttime, endtime,
+                    chunklength = 86400,
+                    overlap=None,
                     time_of_weekday=[],
                     exclude=[],
-                    limit_stations_to_inventory=None):
+                    limit_stations_to_inventory=None,
+                    plot_trace=True):
         
         self.starttime = starttime
         self.endtime = endtime
@@ -73,7 +80,10 @@ class DownloadRestrictions(object):
         self.station = station
         self.location = location
         self.channel = channel
+        self.chunklength = chunklength
+        self.overlap = overlap
         self.time_of_weekday = time_of_weekday
+        self.plot_trace = plot_trace
 
         if not exclude:
             pass
