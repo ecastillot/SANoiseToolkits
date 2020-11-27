@@ -32,46 +32,22 @@ class DownloadRestrictions(object):
     :type location: str
     :param channel: The channel code. Can contain wildcards.
     :type channel: str
-    :type chunklength: int
     :param chunklength:  The length of one chunk in seconds. 
         If set, the time between starttime and endtime will be divided 
         into segments of chunklength_in_sec seconds.
-    :type time_of_weekday: list of (int, float, float) 3-tuples
-    :param time_of_weekday: If set, restricts the data that is included
-        in the stack by time of day and weekday. Monday is `1`, Sunday is
-        `7`, `-1` for any day of week. For example, using
-        `time_of_weekday=[(-1, 0, 2), (-1, 22, 24)]` only individual
-        spectra that have a starttime in between 10pm and 2am are used in
-        the stack for all days of week, using
-        `time_of_weekday=[(5, 22, 24), (6, 0, 2), (6, 22, 24), (7, 0, 2)]`
-        only spectra with a starttime in between Friday 10pm to Saturdays
-        2am and Saturday 10pm to Sunday 2am are used.
-        Note that time of day is specified in UTC (time of day might have
-        to be adapted to daylight saving time). Also note that this setting
-        filters only by starttime of the used psd time slice, so the length
-        of individual slices (set at initialization:
-        :meth:`PPSD(..., ppsd_length=XXX, ...) <PPSD.__init__>` in seconds)
-        has to be taken into consideration (e.g. with a `ppsd_length` of
-        one hour and a `time_of_weekday` restriction to 10pm-2am
-        actually includes data from 10pm-3am).
+    :type chunklength: int
+    :param overlap: Overlap in the downloading in seconds
+    :type overlap: int
     :param exclude: list
     :type exclude: list of 4-tuple ('network', 'station','location', 'channel') 
         where each element contains potentially wildcarded.
-    :param limit_stations_to_inventory: If given, only stations part of the
-        this inventory object will be downloaded. All other restrictions
-        still apply - this just serves to further limit the set of stations
-        to download.
-    :type limit_stations_to_inventory:
-        :class:`~obspy.core.inventory.inventory.Inventory`
     """
     def __init__(self, network, station, 
                     location, channel,
                     starttime, endtime,
                     chunklength = 86400,
                     overlap=None,
-                    time_of_weekday=[],
                     exclude=[],
-                    limit_stations_to_inventory=None,
                     plot_trace=True):
         
         self.starttime = starttime
@@ -82,7 +58,6 @@ class DownloadRestrictions(object):
         self.channel = channel
         self.chunklength = chunklength
         self.overlap = overlap
-        self.time_of_weekday = time_of_weekday
         self.plot_trace = plot_trace
 
         if not exclude:
@@ -94,16 +69,6 @@ class DownloadRestrictions(object):
                                     "'location', 'channel')")
 
         self.exclude = exclude
-
-        # Restrict the possibly downloaded networks and station to
-        # the one in the given inventory.
-        if limit_stations_to_inventory is not None:
-            self.limit_stations_to_inventory = set()
-            for net in limit_stations_to_inventory:
-                for sta in net:
-                    self.limit_stations_to_inventory.add((net.code, sta.code))
-        else:
-            self.limit_stations_to_inventory = None
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
