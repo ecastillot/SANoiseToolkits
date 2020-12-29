@@ -51,12 +51,13 @@ def solve_dldR(client=None, from_xml=None, download_restrictions=None):
     """
     if from_xml != None:
         inv = read_inventory(from_xml, format="STATIONXML")
-        inv = inventory.select(network=download_restrictions.network,
+        inv = inv.select(network=download_restrictions.network,
                                     station=download_restrictions.station,
                                     location=download_restrictions.location,
                                     channel=download_restrictions.channel,
                                     starttime=download_restrictions.starttime,
                                     endtime=download_restrictions.endtime)
+        print(inv)
     else:
         inv = client.get_stations(
                             network=download_restrictions.network,
@@ -70,7 +71,7 @@ def solve_dldR(client=None, from_xml=None, download_restrictions=None):
     # Lets go with feature restrictions.
     if download_restrictions is not None:
         if not download_restrictions.exclude:
-            pass
+            inv_new = inv.copy()
         else:
             inv_new = inv.copy()
             for to_exclude in download_restrictions.exclude:
