@@ -9,6 +9,8 @@ utilities for developing Massive Probabilistic Power Spectral Density download h
 :license:
     GNU Lesser General Public License, Version 3
     (https://www.gnu.org/copyleft/lesser.html)
+
+last update: 28/12/2020
 """
 
 from obspy.clients.fdsn.mass_downloader import domain
@@ -17,6 +19,21 @@ from obspy.signal import PPSD
 from obspy.clients.fdsn.mass_downloader.utils import get_mseed_filename
 import datetime as dt
 import os
+
+PPSD_DIRNAME = 'ppsd'
+MASSPPSD_DIRNAME = 'MassPPSD'
+PLOT_TRACE_DIRNAME = 'plot_trace'
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4'
 
 def solve_dldR(client=None, from_xml=None, download_restrictions=None):
     """
@@ -80,7 +97,7 @@ def get_path(my_storage, job,single_cha_contents,
     parameters:
     -----------
     my_storage: str
-        Path to save all ppsd analyses
+        Path to save a specific ppsd analyses
     job: str
         Name of the job. ex. plot_trace, ppsd,...
     single_cha_contents: str
@@ -164,6 +181,33 @@ def get_chunktimes(starttime,endtime,chunklength_in_sec, overlap_in_sec=0):
 
 def get_ppsd(my_storage,client,inv,ppsd_restrictions,
             single_cha_contents, starttime,endtime, plot_trace=False):
+
+    """
+    Calculates the ppsd object according to starttime, endtime
+    and ppsd_restrictions parameters. It will be save in  
+    my_storage/{network}.{station}.{location}.{channel}/ppsd
+
+    Parameters:
+    -----------
+    my_storage: str
+        Path to save all ppsd analyses
+    client: Client object from obspy
+        To use get_waveforms method
+    inv: Inventory object from obspy
+        To recognize the filtered stations that you want to
+        calculate the ppsd
+    ppsd_restrictions: PPSDRestrictions
+        Information about the PPSD parameters
+    single_cha_contents: 'str'
+        network.station.location.channel
+    starttime: UTCDateTime
+        Start time that will be used to calculate the ppsd.
+    endtime: UTCDateTime
+        End time that will be used to calculate the ppsd.
+    plot_trace: Boolean
+        Plot the stream (It consumes a little bit time)
+    """
+
     network,station,location,channel = single_cha_contents.split('.')
     try:
         st = client.get_waveforms(network=network,
@@ -186,17 +230,22 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
 
     now = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     if st == None:
-        print(f"{now}[load_trace][failed]:  {st_warn } ")
+        print_logs(job='load_trace',content=single_cha_contents,
+                        status='no',
+                        path=st_warn)
         return None
 
     if plot_trace == True:
-        plotst_path = get_path(my_storage,'save_trace',
+        
+        plotst_path = get_path(my_storage,PLOT_TRACE_DIRNAME,
                             single_cha_contents,starttime,
                             endtime,extension_file='jpg')
 
         filename = os.path.basename(plotst_path)
         if os.path.isfile(plotst_path) == True:
-            print(f"{now}[save_trace][exist]:  {filename}")
+            print_logs(job='save_trace',content=single_cha_contents,
+                        status='exist',
+                        path=filename)
 
         else:
             plotst_dir = os.path.dirname(plotst_path)
@@ -205,18 +254,22 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
 
             st.plot(outfile=plotst_path)
             
-            print(f"{now}[save_trace][ok]:  {filename}")
+            print_logs(job='save_trace',content=single_cha_contents,
+                        status='ok',
+                        path=filename)
 
     now = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
     try:
-        ppsd_path = get_path(my_storage,'save_ppsd',
+        ppsd_path = get_path(my_storage,PPSD_DIRNAME,
                             single_cha_contents,starttime,
                             endtime,extension_file='npz')
 
         filename = os.path.basename(ppsd_path)
         if os.path.isfile(ppsd_path ) == True:
-            print(f"{now}[save_ppsd][exist]:  {filename}")
+            print_logs(job='save_ppsd',content=single_cha_contents,
+                        status='exist',
+                        path=filename)
         else:
             ppsd_dir = os.path.dirname(ppsd_path)
             if os.path.isdir(ppsd_dir) == False:
@@ -225,10 +278,159 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
             ppsd = PPSD(tr.stats, metadata=inv, **ppsd_restrictions.__dict__)
             ppsd.add(st)
             ppsd.save_npz(ppsd_path)
-            print(f"{now}[save_ppsd][ok]:  {filename} ")
+            print_logs(job='save_ppsd',content=single_cha_contents,
+                        status='ok',
+                        path=filename)
     except:
-        print(f"{now}[save_ppsd][failed]:  {filename}")
+        print_logs(job='save_ppsd',content=single_cha_contents,
+                    status='exist',
+                    path=filename)
 
+def get_path2join_ppsd(my_storage,content,starttime,endtime):
+    """
+    parameters:
+    -----------
+    my_storage: str
+        Path to save all ppsd analyses
+    content: 'str'
+        network.station.location.channel
+    starttime: UTCDateTime
+        Start time that will be used to begin the ppsd searching
+        and be able to gathering each ppsd in one Massive PPSD
+    endtime: UTCDateTime
+        End time that will be used to finish the ppsd searching
+        and be able to gathering each ppsd in one Massive PPSD
+
+    returns
+    -------
+        path: list
+            Paths of each ppsd that will be gather in one Massive PPSD
+
+    """
+    path = get_path(my_storage,PPSD_DIRNAME,
+                    content,starttime,endtime,extension_file='npz')
+    return path
+
+def print_logs(job,content,status,path):
+    """
+    To print log information in the next format:
+    [date][job][content][status]: path
+
+    parameters:
+    -----------
+    job: 'str'
+        Job in progress
+    content: 'str'
+        network.station.location.channel
+    status: 'str' or Bolean
+        Printing in colors according the status: 
+        ok->green, false->red, exist->cyan, 
+    path: 'str'
+        Referencing the file path in progress
+    """
+
+    if status in ('ok','OK','TRUE','true',True):
+        color_status = bcolors.OKGREEN 
+    elif status in ('no','NO','FALSE','false',False):
+        color_status = bcolors.FAIL 
+    elif status in ('-','exist','EXIST'):
+        color_status = bcolors.OKCYAN
+
+    now = dt.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+    if job in('FAILED','failed'):
+        color_warning = bcolors.FAIL 
+        text = (f"\n{color_warning}\{now}[{job}][{content}]{bcolors.ENDC}"
+        +f"{color_status}[{status}]{bcolors.ENDC}: {path}\n")
+    elif job in('OK','ok'):
+        color_warning = bcolors.OKGREEN 
+        text = (f"\n{color_warning}\{now}[{job}][{content}]{bcolors.ENDC}"
+        +f"{color_status}[{status}]{bcolors.ENDC}: {path}\n")
+    else:
+        color_warning = bcolors.WARNING
+        text = (f"{color_warning}\{now}[{job}][{content}]{bcolors.ENDC}"
+            +f"{color_status}[{status}]{bcolors.ENDC}: {path}")
+ 
+    print(text)
+
+def get_MassPPSD(my_storage,paths,dld_restrictions):
+    """
+    parameters
+    ----------
+    my_storage: str
+            Path to save all ppsd analyses
+    paths: list
+        list of paths that will be loaded or added in one Massive PPSD
+    dld_restrictions: DownloadRestrictions object
+            Class storing non-PPSD restrictions for a downloading
+            ppsd calculations
+
+    returns:
+        save MassPPSD in my_storage/{network}.{station}.{location}.{channel}/Mass_PPSD/
+    """
+    content = paths[0].split('/')[-1].split('__')[0]
+
+    ## to find the path for saving the MassPPSD file
+    network,station,location,channel = content.split('.')
+    _str = "{network}.{station}.{location}.{channel}__{starttime}__{endtime}"
+    filename = get_mseed_filename(_str, network, station, location, channel,
+                            dld_restrictions.starttime, 
+                            dld_restrictions.endtime)
+    filename = filename + f'.npz'
+    path2save = os.path.join(my_storage,content,MASSPPSD_DIRNAME)
+    if os.path.isdir(path2save) == False:
+        os.makedirs(path2save)
+    else: pass
+    path2save = os.path.join(path2save,filename)
+    ####
+
+    if os.path.isfile(path2save) == True:
+        text = f"This file already exists: {path2save}"
+        print_logs(job='OK',content=content,status='exist',
+                        path=text)
+    else:
+
+        loaded = False
+        index = 0
+        while loaded == False:
+            try:
+                ppsd = PPSD.load_npz(paths[index])
+                loaded = True
+                print_logs(job='loaded_npz',content=content,status='ok',
+                            path=paths[index])
+            except:
+                print_logs(job='loaded_npz',content=content,status='no',
+                            path=paths[index])
+                
+                if index == len(paths)-1:
+                    loaded = None
+                else:   
+                    pass
+
+                index += 1
+
+        if loaded == True: 
+            for path in paths[index+1::]:
+                print_logs(job='to_added_npz',content=content,status='-',
+                            path=path)
+
+                ppsd.add_npz(path)
+
+            try:
+                ppsd.save_npz(path2save)
+                print_logs(job='MassPPSD',content=content,status='ok',
+                            path=path2save)
+            except:
+                print_logs(job='MassPPSD',content=content,status='no',
+                            path=path2save)
+
+            text = f"{content}"
+            print_logs(job='OK',content=content,status='ok',
+                            path=text)
+
+        else: 
+            text = f"Not be able to load any npz in {content}"
+            print_logs(job='FAILED',content=content,status='no',
+                            path=text)
 
 if __name__ == "__main__":
     path = "downloadprove/{year}/{network}/{station}/{location}/{channel}/{network}.{station}.{location}.{channel}.{year}.{jul_day}"

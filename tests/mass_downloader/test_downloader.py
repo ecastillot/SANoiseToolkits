@@ -15,7 +15,7 @@ if __name__ == "__main__":
     from obspy.core.utcdatetime import UTCDateTime
     from noise_toolkits.mass_downloader.restrictions import (DownloadRestrictions,
                                                              PPSDrestrictions)
-    from noise_toolkits.mass_downloader.downloader import MassPPSD
+    from noise_toolkits.mass_downloader.downloader import MassivePPSD
 
     client_tuple = ('fdsn',FDSN_Client('http://10.100.100.232:8091'))
     dldR = DownloadRestrictions(network="CM", 
@@ -23,10 +23,10 @@ if __name__ == "__main__":
                                 location="00,10", 
                                 channel="*",
                                 starttime=UTCDateTime(2019, 1, 1,0),
-                                endtime=UTCDateTime(2019, 1, 2,0),
+                                endtime=UTCDateTime(2019, 1, 4,0),
                                 chunklength=86400,
                                 overlap=None,
-                                exclude=[("*","DBB,BAR2","[10]0","HH[ENZ]")],
+                                exclude=[("*","DBB,BAR2","10,00","HH[ENZ]")],
                                 plot_trace=True)
     ppsdR = PPSDrestrictions(skip_on_gaps=False,
                             db_bins=(-200, -50, 1.0), 
@@ -38,10 +38,12 @@ if __name__ == "__main__":
                             period_limits=None)
     my_storage = "/home/ecastillo/SANL_results"
 
-    massppsd = MassPPSD(client_tuple=client_tuple,
+    massppsd = MassivePPSD(client_tuple=client_tuple,
                         dld_restrictions = dldR,
                         my_storage=my_storage)
     
-    massppsd.create_inventory()
+    # massppsd.create_inventory()
     massppsd.download(inv_path="/home/ecastillo/SANL_results/inv.xml",ppsd_restrictions = ppsdR,
                     n_processor=8,concurrent_feature='thread')
+    massppsd.join(inv_path="/home/ecastillo/SANL_results/inv.xml",
+                    n_processor=1,concurrent_feature="thread")
