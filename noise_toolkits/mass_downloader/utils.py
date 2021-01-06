@@ -278,6 +278,8 @@ def get_ppsd(my_storage,client,inv,ppsd_restrictions,
             tr=st[0]
             ppsd = PPSD(tr.stats, metadata=inv, **ppsd_restrictions.__dict__)
             ppsd.add(st)
+            if ppsd_restrictions.time_of_weekday != None:
+                ppsd.calculate_histogram(time_of_weekday=ppsd_restrictions.time_of_weekday )
             ppsd.save_npz(ppsd_path)
             print_logs(job='save_ppsd',content=single_cha_contents,
                         status='ok',
@@ -411,10 +413,13 @@ def get_MassPPSD(my_storage,paths,dld_restrictions):
 
         if loaded == True: 
             for path in paths[index+1::]:
-                print_logs(job='to_added_npz',content=content,status='-',
-                            path=path)
-
-                ppsd.add_npz(path)
+                if os.path.isfile(path)==True:
+                    print_logs(job='to_added_npz',content=content,status='-',
+                                path=path)
+                    ppsd.add_npz(path)
+                else:
+                    print_logs(job='to_added_npz',content=content,status='no',
+                                path=path)
 
             try:
                 ppsd.save_npz(path2save)

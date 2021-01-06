@@ -133,7 +133,8 @@ class PPSDrestrictions(object):
                 ppsd_length=3600.0, overlap=0.5, special_handling=None, 
                 period_smoothing_width_octaves=1.0, 
                 period_step_octaves=0.125, 
-                period_limits=None):
+                period_limits=None,
+                time_of_weekday=None):
         self.skip_on_gaps = skip_on_gaps
         self.db_bins = db_bins
         self.ppsd_length = ppsd_length
@@ -142,6 +143,7 @@ class PPSDrestrictions(object):
         self.period_smoothing_width_octaves = period_smoothing_width_octaves
         self.period_step_octaves = period_step_octaves
         self.period_limits = period_limits
+        self.time_of_weekday = time_of_weekday
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

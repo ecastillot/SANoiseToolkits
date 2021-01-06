@@ -35,15 +35,16 @@ if __name__ == "__main__":
                             special_handling=None, 
                             period_smoothing_width_octaves=1.0, 
                             period_step_octaves=0.125, 
-                            period_limits=None)
+                            period_limits=None,
+                            time_of_weekday=None)
     my_storage = "/home/ecastillo/SANL_results"
 
     massppsd = MassivePPSD(client_tuple=client_tuple,
                         dld_restrictions = dldR,
                         my_storage=my_storage)
     
-    # massppsd.create_inventory()
+    massppsd.create_inventory()
     massppsd.download(inv_path="/home/ecastillo/SANL_results/inv.xml",ppsd_restrictions = ppsdR,
                     n_processor=8,concurrent_feature='thread')
     massppsd.join(inv_path="/home/ecastillo/SANL_results/inv.xml",
-                    n_processor=1,concurrent_feature="thread")
+                    n_processor=8,concurrent_feature="thread")
