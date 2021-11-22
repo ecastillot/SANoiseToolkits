@@ -12,7 +12,7 @@ utilities for developing Massive Probabilistic Power Spectral Density download h
 
 last update: 28/12/2020
 """
-
+from obspy.core.inventory.inventory import Inventory
 from obspy.clients.fdsn.mass_downloader import domain
 from obspy.core.inventory.inventory import read_inventory
 from obspy.signal import PPSD
@@ -50,13 +50,26 @@ def solve_dldR(client=None, from_xml=None, download_restrictions=None):
         Restricted inventory according to download_Restrictions
     """
     if from_xml != None:
+        new_inv = Inventory()
         inv = read_inventory(from_xml, format="STATIONXML")
-        inv = inv.select(network=download_restrictions.network,
-                                    station=download_restrictions.station,
-                                    location=download_restrictions.location,
-                                    channel=download_restrictions.channel,
-                                    starttime=download_restrictions.starttime,
-                                    endtime=download_restrictions.endtime)
+        nets = download_restrictions.network.split(",")
+        stas = download_restrictions.station.split(",")
+        for net in nets:
+          for sta in stas:
+            inventory = inv.select(network=net,
+                              station=sta,
+                              location=download_restrictions.location,
+                              channel=download_restrictions.channel,
+                              starttime=download_restrictions.starttime,
+                              endtime=download_restrictions.endtime)
+            contents = inv.get_contents()
+            values = list(contents.values())
+            flatten_values =  [item for sublist in values for item in sublist]
+            if not flatten_values:
+              continue
+            else:
+              new_inv = new_inv.__add__(inventory.copy()) 
+        inv = new_inv.copy()
         print(inv)
     else:
         inv = client.get_stations(
